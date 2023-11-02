@@ -1,9 +1,7 @@
 
 # CRYPTO-IPFS
 
-<p align="left">
-  <img src="./crypto-ipfs.png" width="350" title="hover text">
-</p>
+<img src="./crypto-ipfs.png" alt="image" width="300" height="300">
 
 **Description**: Asymmetric and symmetric crypto for use with IPFS and private backend.
 
