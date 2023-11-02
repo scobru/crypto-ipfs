@@ -1,7 +1,11 @@
 
 # CRYPTO-IPFS
 
-**Description**: Asymmetric and symmetric crypto for use with IPFS and private backend. **Warning**: This module is unaudited.
+<p align="left">
+  <img src="./crypto-ipfs.png" width="350" title="hover text">
+</p>
+
+**Description**: Asymmetric and symmetric crypto for use with IPFS and private backend.
 
 ## Features
 
@@ -50,3 +54,5 @@ npm test
 - **Keywords**: mecenate, crypto, ipfs
 
 ---
+
+### **⚠️ Warning**: This module is unaudited
