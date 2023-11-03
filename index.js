@@ -30,7 +30,6 @@ const CryptoJS = require("crypto-js");
  * @constant {number} FERNET_SECRET_LENGTH - The length of a Fernet secret.
  * @constant {number} NONCE_LENGTH - The length of a nonce.
  */
-
 const MAX_UINT32 = Math.pow(2, 32) - 1;
 const MAX_UINT8 = Math.pow(2, 8) - 1;
 const FERNET_SECRET_LENGTH = 32;
@@ -40,7 +39,6 @@ const NONCE_LENGTH = 24;
  * Generates a random number based on the environment.
  * @returns {number} A random number between 0 and 1.
  */
-
 const randomNumber = () => {
   if (typeof window === "undefined") {
     return getRandomValues(new Uint8Array(1))[0] / MAX_UINT8;
@@ -52,7 +50,6 @@ const randomNumber = () => {
  * Generates a random string of a specified length.
  * @returns {string} A random alphanumeric string.
  */
-
 const randomString = () => {
   let result = "";
   const characters =
@@ -70,7 +67,6 @@ const randomString = () => {
  * @param {string} inputType - The type of the input ('raw', 'sha2-256', 'hex', or 'b58').
  * @returns {Buffer} The multihash buffer object.
  */
-
 async function multihashFrom(input, inputType) {
   const inputTypes = ["raw", "sha2-256", "hex", "b58"];
   let contentid;
@@ -103,7 +99,6 @@ async function multihashFrom(input, inputType) {
  * @param {string} outputType - The desired output type ('prefix', 'digest', 'hex', or 'b58').
  * @returns {string} The multihash in the specified output format.
  */
-
 async function multihashTo(contentid, outputType) {
   const outputTypes = ["prefix", "digest", "hex", "b58"];
   if (outputType === "prefix") {
@@ -127,7 +122,6 @@ async function multihashTo(contentid, outputType) {
  * @classdesc The MecenateHelper class contains helper functions for the Mecenate protocol.
  * @hideconstructor
  */
-
 const MecenateHelper = {
   /**
    * Generates a random string of a specified length.
@@ -135,6 +129,7 @@ const MecenateHelper = {
    */
   multihash: async ({ input, inputType, outputType }) =>
     multihashTo(await multihashFrom(input, inputType), outputType),
+
   /**
    * Constants used in the Mecenate Protocol.
    * @enum {number} TOKEN_TYPES - The types of tokens used in the Mecenate Protocol.
@@ -156,7 +151,6 @@ const MecenateHelper = {
    * @param {Array} abiValues - The values for the ABI.
    * @returns {string} The encoded calldata.
    */
-
   encodeCreateCall: (templateABI, abiValues) => {
     const abi = new ethers.utils.Interface(templateABI);
     const calldata = abi.functions.initialize.encode(abiValues);
@@ -197,7 +191,6 @@ const MecenateHelper = {
        * Generates a random symmetric key.
        * @returns {string} A random symmetric key.
        * */
-
       generateKey: () => {
         let key = Buffer.from(randomString()).toString("base64");
         let secret = fernet.decode64toHex(key);
@@ -214,7 +207,6 @@ const MecenateHelper = {
        * @param {string} msg - The message to be encrypted.
        * @returns
        */
-
       encryptMessage: (secretKey, msg) => {
         const secret = new fernet.Secret(secretKey);
         const token = new fernet.Token({ secret, ttl: 0 });
@@ -227,7 +219,6 @@ const MecenateHelper = {
        * @param {string} encryptedMessage  - The encrypted message to be decrypted.
        * @returns
        */
-
       decryptMessage: (secretKey, encryptedMessage) => {
         const secret = new fernet.Secret(secretKey);
         const token = new fernet.Token({
@@ -249,6 +240,11 @@ const MecenateHelper = {
         tweetnacl.box.keyPair.fromSecretKey(
           pbkdf2.pbkdf2Sync(sig, salt, 1000, 32)
         ),
+
+      /**
+       * Generates a nonce.
+       * @returns {Uint8Array} A random nonce.
+       * */
       generateNonce: () => tweetnacl.randomBytes(NONCE_LENGTH),
 
       /**
@@ -301,6 +297,7 @@ const MecenateHelper = {
           const encodedMessage = encoder.encode(msg);
           return tweetnacl.secretbox(encodedMessage, nonce, secretKey);
         },
+
         /**
          * Decrypts a message using a nonce, public key, and secret key.
          * @param {Uint8Array} box - The encrypted message.
@@ -323,10 +320,16 @@ const MecenateHelper = {
           return decoder.decode(encodedMessage);
         },
       },
+
+      /**
+       * Generates a key pair.
+       * @returns {Object} A key pair.
+       * */
       keyPair: () => {
         const keyPair = crypto.keyPair();
         return keyPair;
       },
+
       /**
        * Generates a key pair from a secret key.
        * @param {string} secretKey - The secret key to generate the key pair from.
@@ -335,6 +338,7 @@ const MecenateHelper = {
       fromSecretKey: (secretKey) => {
         return crypto.fromSecretKey(secretKey);
       },
+
       /**
        * Encrypts a message using a public key.
        * @param {string} data - The message to be encrypted.
@@ -349,6 +353,7 @@ const MecenateHelper = {
           secretKey: mySecretKey,
         });
       },
+
       /**
        * Decrypts a message using a public key.
        * @param {string} data - The message to be decrypted.
@@ -363,6 +368,7 @@ const MecenateHelper = {
           secretKey: mySecretKey,
         });
       },
+
       /**
        * Signs a message using a secret key.
        * @param {string} data - The message to be signed.
@@ -372,6 +378,7 @@ const MecenateHelper = {
       sign: (data, secretKey) => {
         return crypto.sign(data, secretKey);
       },
+
       /**
        * Verifies a message using a public key.
        * @param {string} data - The message to be verified.
@@ -419,22 +426,20 @@ const MecenateHelper = {
       ) => {
         const storedSalt = CryptoJS.enc.Base64.parse(storedSaltString);
         const storedIv = CryptoJS.enc.Base64.parse(storedIvString);
-
         const storedKey = CryptoJS.PBKDF2(password, storedSalt, {
           keySize: 256 / 32,
         });
-
         const decrypted = CryptoJS.AES.decrypt(
           storedCiphertextString,
           storedKey,
           { iv: storedIv }
         );
-
         const decryptedPlaintext = decrypted.toString(CryptoJS.enc.Utf8);
         console.log("Decrypted plaintext:", decryptedPlaintext);
 
         return decryptedPlaintext;
       },
+
       /**
        * Encrypts an object using a secret key.
        * @param {string} data - The object to be encrypted.
@@ -459,6 +464,7 @@ const MecenateHelper = {
           ciphertext: ciphertextString,
         };
       },
+
       /**
        * Decrypts an object using a secret key.
        * @param {string} secretKey - The secret key to decrypt the object with.
