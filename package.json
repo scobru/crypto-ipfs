@@ -1,6 +1,6 @@
 {
   "name": "@scobru/crypto-ipfs",
-  "version": "1.1.3",
+  "version": "1.1.5",
   "description": "asymmetric and symmetric crypto for use with , ipfs and private backend. warning: unaudited.",
   "main": "index.js",
   "scripts": {

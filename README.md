@@ -46,7 +46,7 @@ npm test
 
 ## Additional Information
 
-- **Version**: 1.1.3
+- **Version**: 1.1.4
 - **License**: MIT
 - **Author**: scobru
 - **Keywords**: mecenate, crypto, ipfs
