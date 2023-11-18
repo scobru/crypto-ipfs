@@ -123,6 +123,8 @@ async function multihashTo(contentid, outputType) {
  * @hideconstructor
  */
 const MecenateHelper = {
+  randomNumber: randomNumber,
+  randomString: randomString,
   /**
    * Generates a random string of a specified length.
    * @returns {string} A random alphanumeric string.
@@ -157,40 +159,15 @@ const MecenateHelper = {
     return calldata;
   },
 
-  /**
-   * Collection of cyrptographic functions.
-   * @namespace
-   * @property {Object} symmetric - Collection of symmetric cryptographic functions.
-   * @property {function} symmetric.generateKey - Generates a random symmetric key.
-   * @property {function} symmetric.encryptMessage - Encrypts a message using a secret key.
-   * @property {function} symmetric.decryptMessage - Decrypts a message using a secret key.
-   * @property {Object} asymmetric - Collection of asymmetric cryptographic functions.
-   * @property {function} asymmetric.generateKeyPair - Generates a key pair from a signature and salt.
-   * @property {function} asymmetric.generateNonce - Generates a nonce.
-   * @property {Object} asymmetric.encryptMessage - Encrypts a message using a nonce, public key, and secret key.
-   * @property {Object} asymmetric.decryptMessage - Decrypts a message using a nonce, public key, and secret key.
-   * @property {Object} asymmetric.secretBox - Collection of secret box cryptographic functions.
-   * @property {function} asymmetric.secretBox.encryptMessage - Encrypts a message using a nonce, public key, and secret key.
-   * @property {function} asymmetric.secretBox.decryptMessage - Decrypts a message using a nonce, public key, and secret key.
-   * @property {function} asymmetric.keyPair - Generates a key pair.
-   * @property {function} asymmetric.fromSecretKey - Generates a key pair from a secret key.
-   * @property {function} asymmetric.encrypt - Encrypts a message using a public key.
-   * @property {function} asymmetric.decrypt - Decrypts a message using a public key.
-   * @property {function} asymmetric.sign - Signs a message using a secret key.
-   * @property {function} asymmetric.verify - Verifies a message using a public key.
-   * @property {Object} aes - Collection of AES cryptographic functions.
-   * @property {function} aes.encryptText - Encrypts a message using a secret key.
-   * @property {function} aes.decryptText - Decrypts a message using a secret key.
-   * @property {function} aes.encryptObject - Encrypts an object using a secret key.
-   * @property {function} aes.decryptObject - Decrypts an object using a secret key.
-   * @property {function} aes.encryptText - Encrypts a message using a secret key.
-   */
   crypto: {
+    /**
+     * Symmetric encryption utilities using the Fernet encryption algorithm.
+     */
     symmetric: {
       /**
-       * Generates a random symmetric key.
-       * @returns {string} A random symmetric key.
-       * */
+       * Generates a random symmetric key using Fernet encryption.
+       * @returns {string} A random symmetric key, Base64-encoded.
+       */
       generateKey: () => {
         let key = Buffer.from(randomString()).toString("base64");
         let secret = fernet.decode64toHex(key);
@@ -202,10 +179,10 @@ const MecenateHelper = {
       },
 
       /**
-       * Encrypts a message using a secret key.
-       * @param {string} secretKey - The secret key to encrypt the message with.
+       * Encrypts a message using a secret key with Fernet encryption.
+       * @param {string} secretKey - The secret key to encrypt the message with, Base64-encoded.
        * @param {string} msg - The message to be encrypted.
-       * @returns
+       * @returns {string} The encrypted message, as a Fernet token.
        */
       encryptMessage: (secretKey, msg) => {
         const secret = new fernet.Secret(secretKey);
@@ -214,10 +191,10 @@ const MecenateHelper = {
       },
 
       /**
-       * Decrypts a message using a secret key.
-       * @param {string} secretKey  - The secret key to decrypt the message with.
-       * @param {string} encryptedMessage  - The encrypted message to be decrypted.
-       * @returns
+       * Decrypts a message using a secret key with Fernet encryption.
+       * @param {string} secretKey - The secret key to decrypt the message with, Base64-encoded.
+       * @param {string} encryptedMessage - The encrypted message to be decrypted, as a Fernet token.
+       * @returns {string} The decrypted message.
        */
       decryptMessage: (secretKey, encryptedMessage) => {
         const secret = new fernet.Secret(secretKey);
@@ -231,10 +208,10 @@ const MecenateHelper = {
     },
     asymmetric: {
       /**
-       * Generates a key pair from a signature and salt.
-       * @param {(string|Buffer|TypedArray|DataView)} sig  - The signature to be used to generate the key pair.
-       * @param {(TypedArray|string|number)} salt
-       * @returns
+       * Generates a key pair from a signature and salt using PBKDF2 and TweetNaCl's box module.
+       * @param {(string|Buffer|TypedArray|DataView)} sig - The signature to be used to generate the key pair.
+       * @param {(TypedArray|string|number)} salt - The salt to be used in PBKDF2.
+       * @returns {Object} Key pair object containing 'publicKey' and 'secretKey' properties.
        */
       generateKeyPair: (sig, salt) =>
         tweetnacl.box.keyPair.fromSecretKey(
@@ -242,18 +219,25 @@ const MecenateHelper = {
         ),
 
       /**
-       * Generates a nonce.
+       * Generate a key pair from seed
+       * @param {Uint8Array} seed
+       * @returns {Object} Key pair object containing 'publicKey' and 'secretKey' properties.
+       */
+
+      generateKeyPairFromSeed: (seed) => tweetnacl.sign.keyPair.fromSeed(seed),
+      /**
+       * Generates a nonce using TweetNaCl's randomBytes function.
        * @returns {Uint8Array} A random nonce.
-       * */
+       */
       generateNonce: () => tweetnacl.randomBytes(NONCE_LENGTH),
 
       /**
-       * Encrypts a message using a nonce, public key, and secret key.
+       * Encrypts a message using a nonce, public key, and secret key with TweetNaCl's box module.
        * @param {string} msg - The message to be encrypted.
        * @param {Uint8Array} nonce - The nonce to be used for encryption.
        * @param {Uint8Array} publicKey - The public key of the receiver.
        * @param {Uint8Array} secretKey - The secret key of the sender.
-       * @returns
+       * @returns {Uint8Array} The encrypted message.
        */
       encryptMessage: (msg, nonce, publicKey, secretKey) => {
         const encoder = new TextEncoder();
@@ -262,13 +246,14 @@ const MecenateHelper = {
       },
 
       /**
-       * Decrypts a message using a nonce, public key, and secret key.
+       * Decrypts a message using a nonce, public key, and secret key with TweetNaCl's box module.
        * @param {Uint8Array} box - The encrypted message.
        * @param {Uint8Array} nonce - The nonce to be used for decryption.
        * @param {Uint8Array} publicKey - The public key of the sender.
        * @param {Uint8Array} secretKey - The secret key of the receiver.
-       * @returns
+       * @returns {string} The decrypted message.
        */
+
       decryptMessage: (box, nonce, publicKey, secretKey) => {
         const decoder = new TextDecoder();
         const encodedMessage = tweetnacl.box.open(
@@ -286,12 +271,12 @@ const MecenateHelper = {
       },
       secretBox: {
         /**
-         * Encrypts a message using a nonce, public key, and secret key.
+         * Encrypts a message using a nonce and a secret key with TweetNaCl's secretbox module.
          * @param {string} msg - The message to be encrypted.
          * @param {Uint8Array} nonce - The nonce to be used for encryption.
-         * @param {Uint8Array} secretKey - The secret key of the sender.
-         * @returns
-         * */
+         * @param {Uint8Array} secretKey - The secret key.
+         * @returns {Uint8Array} The encrypted message.
+         */
         encryptMessage: (msg, nonce, secretKey) => {
           const encoder = new TextEncoder();
           const encodedMessage = encoder.encode(msg);
@@ -299,12 +284,12 @@ const MecenateHelper = {
         },
 
         /**
-         * Decrypts a message using a nonce, public key, and secret key.
+         * Decrypts a message using a nonce and a secret key with TweetNaCl's secretbox module.
          * @param {Uint8Array} box - The encrypted message.
          * @param {Uint8Array} nonce - The nonce to be used for decryption.
-         * @param {Uint8Array} secretKey - The secret key of the receiver.
-         * @returns
-         * */
+         * @param {Uint8Array} secretKey - The secret key.
+         * @returns {string|null} The decrypted message, or null if decryption failed.
+         */
         decryptMessage: (box, nonce, secretKey) => {
           const decoder = new TextDecoder();
           const encodedMessage = tweetnacl.secretbox.open(
@@ -320,11 +305,10 @@ const MecenateHelper = {
           return decoder.decode(encodedMessage);
         },
       },
-
       /**
        * Generates a key pair.
-       * @returns {Object} A key pair.
-       * */
+       * @returns {Object} An object containing a 'publicKey' and 'secretKey'.
+       */
       keyPair: () => {
         const keyPair = crypto.keyPair();
         return keyPair;
@@ -333,48 +317,41 @@ const MecenateHelper = {
       /**
        * Generates a key pair from a secret key.
        * @param {string} secretKey - The secret key to generate the key pair from.
-       * @returns
-       * */
+       * @returns {Object} An object containing a 'publicKey' and 'secretKey'.
+       */
       fromSecretKey: (secretKey) => {
         return crypto.fromSecretKey(secretKey);
       },
 
       /**
-       * Encrypts a message using a public key.
+       * Encrypts a message using a public key and a secret key only, nonce returned.
        * @param {string} data - The message to be encrypted.
        * @param {string} theirPublicKey - The public key of the receiver.
        * @param {string} mySecretKey - The secret key of the sender.
-       * @returns
-       * */
+       * @returns {Object} An object containing 'data' (encrypted data) and 'nonce'.
+       */
       encrypt: (data, theirPublicKey, mySecretKey) => {
-        return crypto.encrypt({
-          message: data,
-          publicKey: theirPublicKey,
-          secretKey: mySecretKey,
-        });
+        return crypto.encrypt(data, theirPublicKey, mySecretKey);
       },
 
       /**
-       * Decrypts a message using a public key.
+       * Decrypts a message using a public key, a secret key, and a nonce.
        * @param {string} data - The message to be decrypted.
+       * @param {string} nonce - The nonce used in the encryption process.
        * @param {string} theirPublicKey - The public key of the sender.
        * @param {string} mySecretKey - The secret key of the receiver.
-       * @returns
-       * */
-      decrypt: (data, theirPublicKey, mySecretKey) => {
-        return crypto.decrypt({
-          message: data,
-          publicKey: theirPublicKey,
-          secretKey: mySecretKey,
-        });
+       * @returns {string} The decrypted message.
+       */
+      decrypt: (data, nonce, theirPublicKey, mySecretKey) => {
+        return crypto.decrypt(data, nonce, theirPublicKey, mySecretKey);
       },
 
       /**
        * Signs a message using a secret key.
        * @param {string} data - The message to be signed.
        * @param {string} secretKey - The secret key of the sender.
-       * @returns
-       * */
+       * @returns {string} The signature of the message.
+       */
       sign: (data, secretKey) => {
         return crypto.sign(data, secretKey);
       },
@@ -384,8 +361,8 @@ const MecenateHelper = {
        * @param {string} data - The message to be verified.
        * @param {string} signature - The signature of the message.
        * @param {string} publicKey - The public key of the sender.
-       * @returns
-       * */
+       * @returns {boolean} True if the message is verified, false otherwise.
+       */
       verify: (data, signature, publicKey) => {
         return crypto.verify(data, signature, publicKey);
       },
@@ -393,10 +370,13 @@ const MecenateHelper = {
     aes: {
       /**
        * Encrypts a message using a secret key.
-       * @param {string} msg - The message to be encrypted.
+       * @param {string} plaintext - The message to be encrypted.
        * @param {string} secretKey - The secret key to encrypt the message with.
-       * @returns
-       * */
+       * @returns {Object} The encrypted message, along with the salt and iv used during encryption. Each of these three properties is a Base64-encoded string.
+       * @property {string} salt - The random salt used during encryption, Base64-encoded.
+       * @property {string} iv - The random initialization vector (iv) used during encryption, Base64-encoded.
+       * @property {string} ciphertext - The encrypted message, Base64-encoded.
+       */
       encryptText: (plaintext, secretKey) => {
         const salt = CryptoJS.lib.WordArray.random(128 / 8);
         const key = CryptoJS.PBKDF2(secretKey, salt, { keySize: 256 / 32 });
@@ -413,11 +393,13 @@ const MecenateHelper = {
       },
 
       /**
-       * Decrypts a message using a secret key.
-       * @param {string} secretKey - The secret key to decrypt the message with.
-       * @param {string} encryptedMessage - The encrypted message to be decrypted.
-       * @returns
-       * */
+       * Decrypts a message using a secret key, a stored salt, a stored IV, and a password.
+       * @param {string} storedSaltString - The stored salt string, Base64-encoded.
+       * @param {string} storedIvString - The stored initialization vector (iv) string, Base64-encoded.
+       * @param {string} storedCiphertextString - The stored ciphertext string, Base64-encoded.
+       * @param {string} password - The password used for decryption.
+       * @returns {string} The decrypted plaintext message.
+       */
       decryptText: (
         storedSaltString,
         storedIvString,
@@ -442,10 +424,13 @@ const MecenateHelper = {
 
       /**
        * Encrypts an object using a secret key.
-       * @param {string} data - The object to be encrypted.
+       * @param {Object} data - The object to be encrypted.
        * @param {string} secretKey - The secret key to encrypt the object with.
-       * @returns
-       * */
+       * @returns {Object} The encrypted object, along with the salt and iv used during encryption. Each of these three properties is a Base64-encoded string.
+       * @property {string} salt - The random salt used during encryption, Base64-encoded.
+       * @property {string} iv - The random initialization vector (iv) used during encryption, Base64-encoded.
+       * @property {string} ciphertext - The encrypted object, Base64-encoded.
+       */
       encryptObject: (data, secretKey) => {
         const salt = CryptoJS.lib.WordArray.random(128 / 8);
         const key = CryptoJS.PBKDF2(secretKey, salt, { keySize: 256 / 32 });
@@ -466,11 +451,14 @@ const MecenateHelper = {
       },
 
       /**
-       * Decrypts an object using a secret key.
-       * @param {string} secretKey - The secret key to decrypt the object with.
-       * @param {string} encryptedObject - The encrypted object to be decrypted.
-       * @returns
-       * */
+       * Encrypts an object using a secret key.
+       * @param {Object} data - The object to be encrypted.
+       * @param {string} secretKey - The secret key to encrypt the object with.
+       * @returns {Object} The encrypted object, along with the salt and iv used during encryption. Each of these three properties is a Base64-encoded string.
+       * @property {string} salt - The random salt used during encryption, Base64-encoded.
+       * @property {string} iv - The random initialization vector (iv) used during encryption, Base64-encoded.
+       * @property {string} ciphertext - The encrypted object, Base64-encoded.
+       */
       decryptObject: (
         storedSaltString,
         storedIvString,

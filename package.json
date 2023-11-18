@@ -1,8 +1,9 @@
 {
   "name": "@scobru/crypto-ipfs",
-  "version": "1.1.5",
+  "version": "1.1.11",
   "description": "asymmetric and symmetric crypto for use with , ipfs and private backend. warning: unaudited.",
   "main": "index.js",
+  "type": "commonjs",
   "scripts": {
     "test": "mocha"
   },
